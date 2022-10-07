@@ -1,0 +1,31 @@
+- name: "deploy app"
+  hosts: app
+  vars_files:
+    - "{{playbook_dir}}/../envs/app-packages.yml"
+    - "{{playbook_dir}}/../envs/common.yml"
+    - "{{playbook_dir}}/../secrets/sec.yml"
+  tasks:
+    - name: "01_cor_package.yml ---- integration"
+      import_tasks: 01_cor_package.yml
+    
+    - name: "02_http_server.yml ---- integration"
+      import_tasks: 02_http_server.yml
+    
+    - name: "03_git_app.yml ---- integration"
+      import_tasks: 03_git_app.yml
+    
+    - name: "04_install_dep.yml ---- integration"
+      import_tasks: 04_install_dep.yml
+    
+    - name: "05_app.yml ---- integration"
+      import_tasks: 05_app.yml
+    
+    - name: "restart nginx"
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+      become: true
+    
+    - name: "get host name"
+      debug:
+        var: inventory_hostname

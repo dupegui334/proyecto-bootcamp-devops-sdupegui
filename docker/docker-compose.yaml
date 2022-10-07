@@ -1,0 +1,33 @@
+services:
+  app:
+    image: app:latest
+    ports:
+      - 8080:5000
+    environment:
+      - DB_USER=microblog
+      - DB_PASSWORD=microblog
+      - DB_DATABASE=microblog
+      - DB_HOST=db
+      - DB_PORT=3306
+    depends_on:
+      - db
+  db:
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - mysql_data:/var/lib/mysql/
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_USER=microblog
+      - MYSQL_PASSWORD=microblog
+      - MYSQL_DATABASE=microblog
+      - MYSQL_ROOT_PASSWORD=root
+  web:
+    image: nginx:custom
+    ports: 
+      - 80:80
+    depends_on: 
+      - app
+volumes:
+  mysql_data:

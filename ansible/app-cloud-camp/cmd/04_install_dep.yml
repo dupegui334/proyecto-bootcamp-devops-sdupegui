@@ -1,0 +1,14 @@
+- name: "instalar cor app"
+  ansible.builtin.yum:
+    name: python3,mysql,python3-pip
+    state: latest
+  become: true
+
+- name: "instalar paquetes de mi app"
+  ansible.builtin.pip:
+    name: "{{ package_pip_custom }}"
+
+- name: "creando mi .env"
+  template:
+    src: "{{playbook_dir}}/../tmp/env.j2"
+    dest: "/home/ec2-user/microblog/.env"

@@ -1,0 +1,5 @@
+- name: "export var to app"
+  shell: "echo 'export FLASK_APP=/home/ec2-user/microblog/microblog.py' >> /home/ec2-user/.profile"
+
+- name: "run app"
+  shell: "nohup flask run &"

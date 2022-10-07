@@ -1,0 +1,67 @@
+#!/usr/bin/env groovy
+
+// Inicializamos variable para guardar el error
+def err = null
+
+node {
+    // Creamos el try catch para obtener el error si sucede
+    try{
+        stage('Checkout') {
+            // Clonamos el repo
+            scmVars = checkout scm([
+                $class: 'GitSCM', 
+                branches: [[name: 'main']], 
+                extensions: [], 
+                userRemoteConfigs: [[
+                    credentialsId: 'git-credentials', 
+                    url: 'https://github.com/cloudcampla/proyecto-bootcamp-devops.git'
+                ]]
+            ])
+        }
+        // Se cambia el directorio por defecto para los pasos de terraform
+        dir('iac/terraform/networking'){
+            stage('Terraform Init') {
+                // Se llaman las credenciales de AWS en jenkins
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-credentials',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY', 
+                    usernameVariable: 'AWS_ACCESS_KEY_ID'
+                )]) {
+                    sh "terraform init -reconfigure -backend-config=backend.conf"
+                }
+            }
+            stage('Terraform Validate') {
+                sh "terraform fmt"
+                sh "terraform validate"
+            }
+            stage('SonarQube') {
+                sh 'sonar-scanner'
+            }
+            stage('Terraform Plan') {
+                withCredentials([usernamePassword(
+                    credentialsId: 'aws-credentials',
+                    passwordVariable: 'AWS_SECRET_ACCESS_KEY', 
+                    usernameVariable: 'AWS_ACCESS_KEY_ID'
+                )]) {
+                    sh "terraform plan -var='owner=jenkins' -out=tfplan"
+                }
+            }
+            stage('Terraform apply') {
+                // Se efecuta el plan si la rama es main
+                when(scmVars.GIT_BRANCH == 'origin/main') {
+                    sh "terraform apply"
+                }
+            }
+        }
+    } catch(caughtError) {
+        err = caughtError
+        currentBuild.result = 'FAILURE'
+    } finally {
+        stage('Clean') {
+            cleanWs()
+        }
+        if(err) {
+            throw err
+        }
+    }
+}

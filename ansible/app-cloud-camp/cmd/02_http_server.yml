@@ -1,0 +1,19 @@
+- name: "decubrir nginx repositorio"
+  shell: "amazon-linux-extras enable nginx1"
+  become: true
+
+- name: "install nginx"
+  shell: "amazon-linux-extras install nginx1 -y"
+  become: true
+
+- name: "crear configuracion para nginx"
+  template:
+    src: "{{playbook_dir}}/../tmp/default.j2"
+    dest: "/etc/nginx/conf.d/default.conf"
+  become: true
+
+- name: "start nginx"
+  ansible.builtin.service:
+    name: nginx
+    state: started
+  become: true
